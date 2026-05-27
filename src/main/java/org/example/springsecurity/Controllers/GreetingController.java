@@ -1,5 +1,7 @@
 package org.example.springsecurity.Controllers;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.example.springsecurity.DTOS.UserDTO;
 import org.example.springsecurity.Services.JWTService;
@@ -30,7 +32,15 @@ public class GreetingController {
     }
 
     @GetMapping("/hello")
-    public ResponseEntity<String> greeting(@RequestParam(value="name", defaultValue="World") String name) {
+    public ResponseEntity<String> greeting(@RequestParam(value="name", defaultValue="World") String name, HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (cookie.getName().equals("JWT_TOKEN")) {
+                    return ResponseEntity.ok().body(cookie.getValue());
+                }
+            }
+        }
         return ResponseEntity.ok("Hello " + name);
     }
     @GetMapping("/")
@@ -53,7 +63,7 @@ public class GreetingController {
             claims.put("username", userDTO.getUsername());
             String token= jwtService.generateToken(claims);
             ResponseCookie cookies= ResponseCookie.from("JWT_TOKEN",token)
-                    .httpOnly(true)
+                    .httpOnly(false)
                     .secure(false)
                     .maxAge(3600)
                     .build();
